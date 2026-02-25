@@ -1,14 +1,42 @@
 ---
-- hosts: centos
+- hosts: linux
   become: true
 
   tasks:
 
-  - name: Update all installed packages
+  - name: Update all installed packages in Centos
     ansible.builtin.dnf:
       name: "*"
       state: latest
     notify: Reboot servers
+    when: ansible_os_family == "Redhat"
+  
+  - name: Upadte all installed packages in Ubuntu
+    ansible.builtin.apt:
+      name: "*"
+      state: latest
+      update_cache: true
+    notify: Reboot servers
+    when: ansible_os_family == "Debian"
+
+  - name: Buscar y reemplazar PermitRootLogin
+    ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        line: "PermitRootLogin no"
+        insertafter: "^#PermitRootLogin"
+
+  - name: Reiniciar el servicio sshd Centos
+    ansible.builtin.systemd:
+      name: sshd
+      state: restarted
+    when: ansible_os_family == "Redhat"
+
+  - name: Reiniciar el servicio ssh Ubunut
+    ansible.builtin.systemd:
+       name: ssh
+       state: restarted
+    when: ansible_os_family == "Debian"
+
 
   handlers:
 
